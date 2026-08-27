@@ -9,7 +9,7 @@ An end-to-end modern data engineering project processing the public Olist Brazil
 This project follows a multi-layered data architecture to ensure data quality, traceability, and performance:
 
 1. **Bronze Layer (Raw):** Ingestion of raw CSV files directly into Google BigQuery without structural changes, preserving the original data format.
-2. **Silver Layer (Cleaned & Conformed):** Data cleaning, handling missing values, standardizing column names, removing duplicates, and transforming data types using Python/Pandas.
+2. **Silver Layer (Cleaned & Conformed):** Data cleaning, handling missing values, standardizing column names, removing duplicates, and transforming data types using SQL in Google BigQuery.
 3. **Gold Layer (Aggregated / Business-Ready):** Optimized SQL queries and aggregated tables designed for analytics, business intelligence, and reporting.
 
 ---
