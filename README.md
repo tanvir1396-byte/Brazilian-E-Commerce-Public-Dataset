@@ -17,7 +17,7 @@ This project follows a multi-layered data architecture to ensure data quality, t
 ## 🛠️ Tech Stack
 * **Language:** Python
 * **Data Manipulation & Processing:** Pandas, Glob, OS
-* **Cloud Data Warehouse:** Google BigQuery (`pandas_gbq`)
+* **Cloud Data Warehouse:** Google BigQuery
 * **Version Control:** Git & GitHub
 
 ---
