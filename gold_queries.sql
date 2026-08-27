@@ -1,3 +1,9 @@
+-- GOLD LAYER: Monthly Revenue, Order Volume & Unique Customers Summary
+-- Purpose: Aggregates delivered orders by month to calculate total revenue, 
+--total order volume, and active unique customer count for business insights.
+
+
+
 CREATE OR REPLACE TABLE `elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.monthly_revenue_order_volume_summary` AS
 SELECT
 
@@ -21,6 +27,10 @@ WHERE o.order_status='delivered'
 GROUP BY order_month;
 
 
+/*GOLD LAYER: Top Selling Product Categories Performance
+Purpose: Analyzes total revenue (price + freight) and average 
+review scores across different product categories.*/
+
 CREATE OR REPLACE TABLE `elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.top_selling_product_categories`AS
 SELECT
 c.product_category_name_english,
@@ -34,8 +44,12 @@ on i.product_id=p.product_id
 LEFT JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_product_category_name_translation` as c
 on c.product_category_name=p.product_category_name
 
-GROUP BY product_category_name_english
+GROUP BY product_category_name_english;
 
+
+-- GOLD LAYER: State-Wise Performance & Delivery Metrics
+-- Purpose: Analyzes total orders and calculates the average 
+-- delivery time (in days) from purchase to customer delivery per state.
 
 CREATE OR REPLACE TABLE `elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.state_wise_performance_delivery_metrics` AS
 
@@ -59,4 +73,4 @@ WHERE o.order_delivered_customer_date IS NOT NULL
 
 
 
-GROUP BY c.customer_state
+GROUP BY c.customer_state;
