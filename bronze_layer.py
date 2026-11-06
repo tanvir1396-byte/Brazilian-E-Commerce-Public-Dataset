@@ -3,7 +3,7 @@ import pandas_gbq
 import os
 import glob as glob
 
-x=glob.glob(r'C:\Users\Tanvir\Downloads\Brazilian E-Commerce Public Dataset\*.csv')
+x=glob.glob(r'D:\Brazilian E-Commerce Public Dataset\raw_data\*.csv')
 
 for data in x:
     y=pd.read_csv(data)
@@ -22,5 +22,5 @@ for data in x:
         y,
         destination_table=full_path,
         project_id=project_name,
-        if_exists='append'
+        if_exists='replace'
     )

@@ -7,7 +7,7 @@
 CREATE OR REPLACE TABLE `elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.monthly_revenue_order_volume_summary` AS
 SELECT
 
-FORMAT_DATE('%Y-%m', o.order_purchase_timestamp)as order_month ,
+FORMAT_DATE('%Y-%m', DATE(o.order_purchase_timestamp))as order_month ,
 COUNT(DISTINCT(o.order_id)) as total_order,
 ROUND(SUM(p.payment_value),2)as total_value,
 COUNT(DISTINCT(c.customer_unique_id)) as unique_customer
@@ -29,22 +29,62 @@ GROUP BY order_month;
 
 /*GOLD LAYER: Top Selling Product Categories Performance
 Purpose: Analyzes total revenue (price + freight) and average 
-review scores across different product categories.*/
+review scores across different product categories.
+Logic:
+- Aggregate item revenue by order and product category
+- Aggregate reviews by order before joining
+- This prevents join fanout and revenue inflation
+*/
 
-CREATE OR REPLACE TABLE `elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.top_selling_product_categories`AS
+CREATE OR REPLACE TABLE
+`elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.top_selling_product_categories` AS
+
+WITH order_category_revenue AS (
 SELECT
+i.order_id,
 c.product_category_name_english,
-ROUND(SUM(i.price + i.freight_value),2)as total_revenue,
-ROUND(AVG(r.review_score),2)as avg_review
-FROM `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_order_items_dataset` as i
-JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_order_reviews_dataset` as r
-ON i.order_id=r.order_id
-LEFT JOIN`elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_products_dataset` as p
-on i.product_id=p.product_id
-LEFT JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_product_category_name_translation` as c
-on c.product_category_name=p.product_category_name
+SUM(i.price + i.freight_value) AS total_revenue
 
-GROUP BY product_category_name_english;
+FROM `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_order_items_dataset` AS i
+
+LEFT JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_products_dataset` AS p
+ON i.product_id = p.product_id
+
+LEFT JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_product_category_name_translation` AS c
+ON p.product_category_name = c.product_category_name
+
+GROUP BY
+i.order_id,
+c.product_category_name_english
+),
+
+order_review AS (
+SELECT
+order_id,
+AVG(review_score) AS avg_review_score
+
+FROM `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_order_reviews_dataset`
+
+GROUP BY order_id
+)
+
+SELECT
+COALESCE(
+ocr.product_category_name_english,
+'Unknown Category'
+) AS product_category_name_english,
+
+ROUND(SUM(ocr.total_revenue), 2) AS total_revenue,
+
+ROUND(AVG(orv.avg_review_score), 2) AS avg_review_score
+
+FROM order_category_revenue AS ocr
+
+LEFT JOIN order_review AS orv
+ON ocr.order_id = orv.order_id
+
+GROUP BY
+product_category_name_english;
 
 
 -- GOLD LAYER: State-Wise Performance & Delivery Metrics
