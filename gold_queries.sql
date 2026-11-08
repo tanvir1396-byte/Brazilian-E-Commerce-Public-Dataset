@@ -99,7 +99,7 @@ c.customer_state,
 
 COUNT(o.order_id) as total_order,
 
-ROUND(AVG(TIMESTAMP_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp ,DAY)),2) as avg_delivery_date
+ROUND(AVG(TIMESTAMP_DIFF(o.order_delivered_customer_date,o.order_purchase_timestamp ,DAY)),2) as avg_delivery_days
 
 
 
@@ -114,3 +114,35 @@ WHERE o.order_delivered_customer_date IS NOT NULL
 
 
 GROUP BY c.customer_state;
+
+
+/*
+GOLD LAYER: Seller Geolocation Analysis
+
+Purpose:
+Combines seller information with geographical coordinates.
+
+Logic:
+- Uses seller ZIP code prefix to match geolocation data.
+- Uses LEFT JOIN to retain all sellers.
+- Keeps missing geographical coordinates as NULL.
+*/
+
+CREATE OR REPLACE TABLE
+`elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.seller_geolocation_analysis` AS
+
+SELECT
+    s.seller_id,
+    s.seller_city,
+    s.seller_state,
+    s.seller_zip_code_prefix,
+    g.avg_geolocation_lat,
+    g.avg_geolocation_lng
+
+FROM
+`elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_sellers_dataset` AS s
+
+LEFT JOIN
+`elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_geolocation_dataset` AS g
+
+ON s.seller_zip_code_prefix = g.geolocation_zip_code_prefix;

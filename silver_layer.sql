@@ -96,24 +96,40 @@ WHERE review_score  BETWEEN 1 AND 5;
 Purpose: Removes duplicate products, standardizes category names to lowercase, 
 and filters out records with null product IDs or invalid/zero physical dimensions and weight.*/
 
-CREATE OR REPLACE TABLE `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_products_dataset` AS
+CREATE OR REPLACE TABLE
+`elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_products_dataset` AS
+
 SELECT DISTINCT
 product_id,
-LOWER(TRIM(product_category_name)) as product_category_name ,
+LOWER(TRIM(product_category_name)) AS product_category_name,
 product_name_lenght,
 product_description_lenght,
 product_photos_qty,
-product_weight_g,
-product_height_cm,
-product_length_cm,
-product_width_cm
-FROM `elite-vista-474514-t0.Bronze_dataset_Brazilian_ecommerce.extracted_olist_products_dataset`
-WHERE product_id IS NOT NULL
-AND
-product_length_cm>0 AND
-product_height_cm>0 AND
-product_weight_g>0 AND
-product_width_cm>0;
+
+CASE
+WHEN product_weight_g IS NULL OR product_weight_g <= 0 THEN NULL
+ELSE product_weight_g
+END AS product_weight_g,
+
+CASE
+WHEN product_height_cm IS NULL OR product_height_cm <= 0 THEN NULL
+ELSE product_height_cm
+END AS product_height_cm,
+
+CASE
+WHEN product_length_cm IS NULL OR product_length_cm <= 0 THEN NULL
+ELSE product_length_cm
+END AS product_length_cm,
+
+CASE
+WHEN product_width_cm IS NULL OR product_width_cm <= 0 THEN NULL
+ELSE product_width_cm
+END AS product_width_cm
+
+FROM
+`elite-vista-474514-t0.Bronze_dataset_Brazilian_ecommerce.extracted_olist_products_dataset`
+
+WHERE product_id IS NOT NULL;
 
 /* SILVER LAYER: Cleaning and Transforming Sellers Dataset
 Purpose: Removes duplicate sellers, trims whitespace from city names, 
