@@ -27,5 +27,6 @@ for data in x:
         y,
         destination_table=full_path,
         project_id=project_name,
-        if_exists='replace'
+        if_exists='replace',
+        
     )

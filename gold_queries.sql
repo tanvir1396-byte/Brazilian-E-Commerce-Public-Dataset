@@ -4,7 +4,7 @@
 
 
 
-CREATE OR REPLACE TABLE `elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.monthly_revenue_order_volume_summary` AS
+CREATE OR REPLACE TABLE `my-project-17182-514115.gold_dataset_Brazilian_ecommerce.monthly_revenue_order_volume_summary` AS
 SELECT
 
 FORMAT_DATE('%Y-%m', DATE(o.order_purchase_timestamp))as order_month ,
@@ -13,13 +13,13 @@ ROUND(SUM(p.payment_value),2)as total_value,
 COUNT(DISTINCT(c.customer_unique_id)) as unique_customer
 
 
-FROM `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_order_payments_dataset` as p
+FROM `my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_order_payments_dataset` as p
 JOIN
-`elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.cleaned_orders_dataset` as o
+`my-project-17182-514115.silver_dataset_Brazilian_ecommerce.cleaned_orders_dataset` as o
 ON p.order_id=o.order_id
 
 
-JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.cleaned_customer_dataset` as c
+JOIN `my-project-17182-514115.silver_dataset_Brazilian_ecommerce.cleaned_customer_dataset` as c
 ON o.customer_id=c.customer_id
 
 WHERE o.order_status='delivered'
@@ -37,7 +37,7 @@ Logic:
 */
 
 CREATE OR REPLACE TABLE
-`elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.top_selling_product_categories` AS
+`my-project-17182-514115.gold_dataset_Brazilian_ecommerce.top_selling_product_categories` AS
 
 WITH order_category_revenue AS (
 SELECT
@@ -45,12 +45,12 @@ i.order_id,
 c.product_category_name_english,
 SUM(i.price + i.freight_value) AS total_revenue
 
-FROM `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_order_items_dataset` AS i
+FROM `my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_order_items_dataset` AS i
 
-LEFT JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_products_dataset` AS p
+LEFT JOIN `my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_products_dataset` AS p
 ON i.product_id = p.product_id
 
-LEFT JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_product_category_name_translation` AS c
+LEFT JOIN `my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_product_category_name_translation` AS c
 ON p.product_category_name = c.product_category_name
 
 GROUP BY
@@ -63,7 +63,7 @@ SELECT
 order_id,
 AVG(review_score) AS avg_review_score
 
-FROM `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_order_reviews_dataset`
+FROM `my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_order_reviews_dataset`
 
 GROUP BY order_id
 )
@@ -91,7 +91,7 @@ product_category_name_english;
 -- Purpose: Analyzes total orders and calculates the average 
 -- delivery time (in days) from purchase to customer delivery per state.
 
-CREATE OR REPLACE TABLE `elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.state_wise_performance_delivery_metrics` AS
+CREATE OR REPLACE TABLE `my-project-17182-514115.gold_dataset_Brazilian_ecommerce.state_wise_performance_delivery_metrics` AS
 
 SELECT
 
@@ -103,9 +103,9 @@ ROUND(AVG(TIMESTAMP_DIFF(o.order_delivered_customer_date,o.order_purchase_timest
 
 
 
-FROM `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.cleaned_customer_dataset` as c
+FROM `my-project-17182-514115.silver_dataset_Brazilian_ecommerce.cleaned_customer_dataset` as c
 
-JOIN `elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.cleaned_orders_dataset` as o
+JOIN `my-project-17182-514115.silver_dataset_Brazilian_ecommerce.cleaned_orders_dataset` as o
 
 ON c.customer_id=o.customer_id
 
@@ -129,7 +129,7 @@ Logic:
 */
 
 CREATE OR REPLACE TABLE
-`elite-vista-474514-t0.gold_dataset_Brazilian_ecommerce.seller_geolocation_analysis` AS
+`my-project-17182-514115.gold_dataset_Brazilian_ecommerce.seller_geolocation_analysis` AS
 
 SELECT
     s.seller_id,
@@ -140,9 +140,50 @@ SELECT
     g.avg_geolocation_lng
 
 FROM
-`elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_sellers_dataset` AS s
+`my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_sellers_dataset` AS s
 
 LEFT JOIN
-`elite-vista-474514-t0.silver_dataset_Brazilian_ecommerce.clean_geolocation_dataset` AS g
+`my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_geolocation_dataset` AS g
 
 ON s.seller_zip_code_prefix = g.geolocation_zip_code_prefix;
+
+
+
+/*
+GOLD LAYER: Revenue by Seller State
+
+Purpose:
+Analyzes business performance across seller states.
+
+Logic:
+- Joins order items with seller information using seller_id.
+- Uses LEFT JOIN to retain order items even when seller information is missing.
+- Handles missing or blank seller states as 'Unknown'.
+- Calculates unique orders and unique sellers per state.
+- Calculates total revenue using item price and freight value.
+- Sorts seller states by total revenue in descending order.
+*/
+
+CREATE OR REPLACE TABLE
+`my-project-17182-514115.gold_dataset_Brazilian_ecommerce.revenue_by_seller_state` AS
+
+SELECT
+    COALESCE(NULLIF(TRIM(s.seller_state), ''), 'Unknown') AS seller_state,
+
+    COUNT(DISTINCT i.order_id) AS total_orders,
+
+    COUNT(DISTINCT i.seller_id) AS total_sellers,
+
+    ROUND(SUM(i.price + i.freight_value), 2) AS total_revenue
+
+FROM
+`my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_order_items_dataset` AS i
+
+LEFT JOIN
+`my-project-17182-514115.silver_dataset_Brazilian_ecommerce.clean_sellers_dataset` AS s
+
+ON i.seller_id = s.seller_id
+
+GROUP BY seller_state
+
+ORDER BY total_revenue DESC;
